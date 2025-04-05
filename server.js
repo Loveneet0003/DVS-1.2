@@ -67,8 +67,13 @@ connection.once('open', () => {
 // Define Vote Schema
 const voteSchema = new mongoose.Schema({
     candidateId: { type: Number, required: true },
-    voterEmail: { type: String, required: true, unique: true },
+    voterEmail: { type: String, required: true },
+    deviceId: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now }
 });
+
+// Create a compound index to ensure one vote per email and device
+voteSchema.index({ voterEmail: 1, deviceId: 1 }, { unique: true });
 
 const Vote = mongoose.model('Vote', voteSchema);
 
@@ -155,19 +160,19 @@ app.get('/api/candidates', async (req, res) => {
 });
 
 app.post('/api/vote', async (req, res) => {
-    const { candidateId, voterEmail } = req.body;
-    console.log('Received vote request:', { candidateId, voterEmail });
+    const { candidateId, voterEmail, deviceId } = req.body;
+    console.log('Received vote request:', { candidateId, voterEmail, deviceId });
 
     try {
-        // Check if user has already voted
-        const existingVote = await Vote.findOne({ voterEmail });
+        // Check if user has already voted from this device
+        const existingVote = await Vote.findOne({ voterEmail, deviceId });
         if (existingVote) {
-            console.log('User has already voted:', voterEmail);
-            return res.status(400).json({ message: 'You have already cast your vote!' });
+            console.log('User has already voted from this device:', { voterEmail, deviceId });
+            return res.status(400).json({ message: 'You have already cast your vote from this device!' });
         }
 
         // Create new vote
-        const vote = new Vote({ candidateId, voterEmail });
+        const vote = new Vote({ candidateId, voterEmail, deviceId });
         await vote.save();
         console.log('Vote saved:', vote);
 
@@ -182,7 +187,12 @@ app.post('/api/vote', async (req, res) => {
         res.json({ message: 'Vote cast successfully!' });
     } catch (error) {
         console.error('Error processing vote:', error);
-        res.status(500).json({ message: error.message });
+        if (error.code === 11000) {
+            // Duplicate key error (unique index violation)
+            res.status(400).json({ message: 'You have already cast your vote from this device!' });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
     }
 });
 

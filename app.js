@@ -12,6 +12,49 @@ const candidatesContainer = document.getElementById('candidates-container');
 const resultsContainer = document.getElementById('results-container');
 const totalVotesElement = document.getElementById('total-votes');
 
+// Voting status tracking
+const VOTED_KEY = 'hasVoted';
+const VOTER_EMAIL_KEY = 'voterEmail';
+const DEVICE_ID_KEY = 'deviceId';
+
+// Generate a unique device ID
+function generateDeviceId() {
+    // Check if we already have a device ID
+    let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+    
+    if (!deviceId) {
+        // Generate a random device ID
+        deviceId = 'device_' + Math.random().toString(36).substring(2, 15) + 
+                  Math.random().toString(36).substring(2, 15);
+        
+        // Save it to localStorage
+        localStorage.setItem(DEVICE_ID_KEY, deviceId);
+    }
+    
+    return deviceId;
+}
+
+// Get device ID
+function getDeviceId() {
+    return localStorage.getItem(DEVICE_ID_KEY) || generateDeviceId();
+}
+
+// Check if user has already voted
+function hasVoted() {
+    return localStorage.getItem(VOTED_KEY) === 'true';
+}
+
+// Save voting status
+function markAsVoted(email) {
+    localStorage.setItem(VOTED_KEY, 'true');
+    localStorage.setItem(VOTER_EMAIL_KEY, email);
+}
+
+// Get voter email
+function getVoterEmail() {
+    return localStorage.getItem(VOTER_EMAIL_KEY);
+}
+
 // Candidates data
 let candidates = [];
 
@@ -141,19 +184,7 @@ document.querySelectorAll('.btn[data-page]').forEach(button => {
 });
 
 // Registration Form
-registerForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    
-    // Check if email contains @nith.ac.in
-    if (email.includes('@nith.ac.in')) {
-        // Store the verified email in localStorage
-        localStorage.setItem('verifiedEmail', email);
-        showMessage(registerMessage, 'Registration successful! You can now vote.', 'success');
-    } else {
-        showMessage(registerMessage, 'Please use a valid NIT Hamirpur email address (@nith.ac.in)', 'error');
-    }
-});
+registerForm.addEventListener('submit', handleRegisterSubmit);
 
 // Helper function to show messages
 function showMessage(element, message, type) {
@@ -166,14 +197,34 @@ function showMessage(element, message, type) {
     }, 5000);
 }
 
-// Check if user is registered
-function checkRegistration() {
-    const verifiedEmail = localStorage.getItem('verifiedEmail');
-    if (!verifiedEmail) {
-        showMessage(voteMessage, 'Please register first with your college email', 'error');
-        return false;
+// Handle registration form submission
+async function handleRegisterSubmit(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('email').value.trim();
+    
+    if (!email) {
+        showMessage(registerMessage, 'Please enter your email address.', 'error');
+        return;
     }
-    return true;
+    
+    // Check if user has already voted
+    if (hasVoted()) {
+        showMessage(registerMessage, 'You have already voted from this device!', 'error');
+        return;
+    }
+    
+    try {
+        // Store email in localStorage
+        localStorage.setItem(VOTER_EMAIL_KEY, email);
+        showMessage(registerMessage, 'Registration successful! You can now vote.', 'success');
+        
+        // Switch to voting page
+        showPage('vote');
+    } catch (error) {
+        console.error('Error during registration:', error);
+        showMessage(registerMessage, 'Error during registration. Please try again.', 'error');
+    }
 }
 
 // Load candidates
@@ -289,11 +340,116 @@ function displayResults(candidates, total) {
     });
 }
 
+// Check if user is registered
+function checkRegistration() {
+    const verifiedEmail = localStorage.getItem('verifiedEmail');
+    if (!verifiedEmail) {
+        showMessage(voteMessage, 'Please register first with your college email', 'error');
+        return false;
+    }
+    return true;
+}
+
+// Handle vote submission
+async function handleVoteSubmit(event) {
+    event.preventDefault();
+    
+    // Check if user has already voted
+    if (hasVoted()) {
+        showMessage(voteMessage, 'You have already voted from this device!', 'error');
+        return;
+    }
+    
+    const selectedCandidate = document.querySelector('input[name="candidate"]:checked');
+    if (!selectedCandidate) {
+        showMessage(voteMessage, 'Please select a candidate to vote for.', 'error');
+        return;
+    }
+    
+    const candidateId = parseInt(selectedCandidate.value);
+    const voterEmail = getVoterEmail();
+    const deviceId = getDeviceId();
+    
+    if (!voterEmail) {
+        showMessage(voteMessage, 'Please register with your email first.', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ candidateId, voterEmail, deviceId })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(voteMessage, data.message, 'success');
+            // Mark as voted in localStorage
+            markAsVoted(voterEmail);
+            // Update results
+            updateResults();
+        } else {
+            showMessage(voteMessage, data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error casting vote:', error);
+        showMessage(voteMessage, 'Error casting vote. Please try again.', 'error');
+    }
+}
+
+// Initialize the application
+async function initializeApp() {
+    try {
+        // Load candidates data
+        await loadCandidatesData();
+        
+        // Display candidates
+        displayCandidates();
+        
+        // Update results
+        updateResults();
+        
+        // Check if user has already voted
+        if (hasVoted()) {
+            // Disable voting form
+            const voteForm = document.getElementById('vote-form');
+            if (voteForm) {
+                voteForm.style.opacity = '0.5';
+                voteForm.style.pointerEvents = 'none';
+                
+                // Add a message
+                const alreadyVotedMessage = document.createElement('div');
+                alreadyVotedMessage.className = 'message error';
+                alreadyVotedMessage.textContent = 'You have already voted from this device!';
+                voteForm.parentNode.insertBefore(alreadyVotedMessage, voteForm);
+            }
+        }
+    } catch (error) {
+        console.error('Error initializing app:', error);
+    }
+}
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    // Load candidates when vote page is shown
-    document.querySelector('a[data-page="vote"]').addEventListener('click', loadCandidates);
+    // Set up navigation
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = e.target.getAttribute('href').substring(1);
+            showPage(page);
+        });
+    });
     
-    // Load results when results page is shown
-    document.querySelector('a[data-page="results"]').addEventListener('click', loadResults);
+    // Set up vote form
+    const voteForm = document.getElementById('vote-form');
+    if (voteForm) {
+        voteForm.addEventListener('submit', handleVoteSubmit);
+    }
+    
+    // Initialize the application
+    initializeApp();
 }); 
