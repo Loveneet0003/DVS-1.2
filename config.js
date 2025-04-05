@@ -1,12 +1,12 @@
 // API Configuration
 const config = {
     // Set this to true when deploying to production
-    isProduction: false,
+    isProduction: true,
     
     // API URLs
     apiUrl: {
         development: 'http://localhost:5000/api',
-        production: 'https://college-election-backend.onrender.com/api' // Replace with your actual Render URL after deployment
+        production: 'https://dvs-1-2.onrender.com/api' // Added /api to the end
     },
     
     // Get the current API URL based on environment

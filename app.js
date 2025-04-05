@@ -1,5 +1,6 @@
 // API Configuration
 const API_URL = config.getApiUrl();
+console.log('Using API URL:', API_URL);
 
 // DOM Elements
 const navLinks = document.querySelectorAll('.nav-links a');
@@ -19,9 +20,12 @@ async function loadCandidatesData() {
     try {
         console.log('Fetching candidates from API...');
         const response = await fetch(`${API_URL}/candidates`);
+        console.log('Response status:', response.status);
+        
         if (!response.ok) {
             throw new Error(`Failed to fetch candidates: ${response.status}`);
         }
+        
         const data = await response.json();
         console.log('Received candidates data:', data);
         
@@ -30,6 +34,12 @@ async function loadCandidatesData() {
             console.log('No candidates found, trying to initialize...');
             // If no candidates found, try to initialize them
             const initResponse = await fetch(`${API_URL}/check-init`);
+            console.log('Init response status:', initResponse.status);
+            
+            if (!initResponse.ok) {
+                throw new Error(`Failed to check initialization: ${initResponse.status}`);
+            }
+            
             const initData = await initResponse.json();
             console.log('Initialization check response:', initData);
             
@@ -44,27 +54,37 @@ async function loadCandidatesData() {
             const resetResponse = await fetch(`${API_URL}/reset-candidates`, {
                 method: 'POST'
             });
+            console.log('Reset response status:', resetResponse.status);
+            
+            if (!resetResponse.ok) {
+                throw new Error(`Failed to reset candidates: ${resetResponse.status}`);
+            }
+            
             const resetData = await resetResponse.json();
             console.log('Reset response:', resetData);
             
             // Try one more time to get candidates
             const finalResponse = await fetch(`${API_URL}/candidates`);
+            if (!finalResponse.ok) {
+                throw new Error(`Failed to fetch candidates after reset: ${finalResponse.status}`);
+            }
+            
             const finalData = await finalResponse.json();
             console.log('Final candidates data:', finalData);
             
-            if (finalData && finalData.length > 0) {
+            if (Array.isArray(finalData) && finalData.length > 0) {
                 candidates = finalData;
                 return finalData;
             }
             
-            throw new Error('No candidates available after reset');
+            throw new Error('Failed to initialize candidates after multiple attempts');
         }
         
         candidates = data;
         return data;
     } catch (error) {
         console.error('Error loading candidates:', error);
-        showMessage(voteMessage, 'Error loading candidates. Please try again.', 'error');
+        showMessage(voteMessage, `Error loading candidates: ${error.message}`, 'error');
         return [];
     }
 }
