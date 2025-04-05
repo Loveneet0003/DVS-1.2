@@ -279,6 +279,11 @@ function displayCandidates(candidates) {
     
     candidatesContainer.innerHTML = '';
     
+    // Calculate total votes for percentage
+    const totalVotes = candidates.reduce((sum, candidate) => sum + (candidate.voteCount || 0), 0);
+    console.log('Total votes:', totalVotes);
+    totalVotesElement.textContent = totalVotes;
+    
     candidates.forEach(candidate => {
         console.log('Creating card for candidate:', candidate);
         
@@ -287,23 +292,32 @@ function displayCandidates(candidates) {
             return;
         }
         
+        // Calculate percentage
+        const percentage = totalVotes > 0 ? ((candidate.voteCount || 0) / totalVotes * 100).toFixed(1) : 0;
+        
         const candidateCard = document.createElement('div');
         candidateCard.className = 'candidate-card';
         candidateCard.innerHTML = `
-            <h3>${candidate.name || 'Unknown Candidate'}</h3>
-            <p>Votes: ${candidate.voteCount || 0}</p>
-            <button onclick="castVote(${candidate.id})" ${hasVoted() ? 'disabled' : ''}>
-                ${hasVoted() ? 'Already Voted' : 'Vote'}
+            <div class="candidate-info">
+                <h3>${candidate.name || 'Unknown Candidate'}</h3>
+                <div class="vote-stats">
+                    <span class="vote-count">${candidate.voteCount || 0} votes</span>
+                    <span class="vote-percentage">${percentage}%</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: ${percentage}%"></div>
+                </div>
+            </div>
+            <button class="vote-button ${hasVoted() ? 'voted' : ''}" 
+                    onclick="castVote(${candidate.id})" 
+                    ${hasVoted() ? 'disabled' : ''}>
+                <span class="button-text">${hasVoted() ? 'Already Voted' : 'Vote Now'}</span>
+                <span class="button-icon">${hasVoted() ? '✓' : '→'}</span>
             </button>
         `;
         
         candidatesContainer.appendChild(candidateCard);
     });
-    
-    // Update total votes
-    const totalVotes = candidates.reduce((sum, candidate) => sum + (candidate.voteCount || 0), 0);
-    console.log('Total votes:', totalVotes);
-    totalVotesElement.textContent = totalVotes;
 }
 
 // Cast vote function

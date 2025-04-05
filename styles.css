@@ -271,129 +271,156 @@ main {
 }
 
 .candidate-card {
-    background-color: white;
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-    text-align: center;
-    transition: transform 0.3s ease;
-    border: 2px solid transparent;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .candidate-card:hover {
-    transform: translateY(-5px);
-    border-color: var(--light-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.candidate-card h3 {
-    color: var(--primary-blue);
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
+.candidate-info {
+    flex: 1;
+    margin-right: 20px;
 }
 
-/* Results Styles */
-.result-card {
-    background-color: white;
-    border-radius: 20px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-    transition: transform 0.3s ease;
+.candidate-info h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1.2em;
 }
 
-.result-card:hover {
-    transform: translateY(-5px);
-}
-
-.result-card h3 {
-    color: var(--primary-blue);
-    margin-bottom: 0.5rem;
+.vote-stats {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    color: #666;
 }
 
-.result-card p {
-    color: var(--text-light);
-    margin-bottom: 1rem;
+.vote-count {
+    font-weight: bold;
+    color: #2196F3;
+}
+
+.vote-percentage {
+    font-weight: bold;
+    color: #4CAF50;
 }
 
 .progress-container {
-    background-color: #f0f0f0;
-    border-radius: 25px;
-    height: 25px;
-    margin: 1rem 0;
+    width: 100%;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
     overflow: hidden;
-    position: relative;
 }
 
 .progress-bar {
     height: 100%;
+    background: linear-gradient(90deg, #2196F3, #4CAF50);
+    border-radius: 4px;
+    transition: width 0.5s ease-in-out;
+}
+
+/* Vote Button */
+.vote-button {
+    background: linear-gradient(45deg, #2196F3, #4CAF50);
+    color: white;
+    border: none;
+    padding: 12px 24px;
     border-radius: 25px;
-    transition: width 0.5s ease;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
 
-.progress-bar[data-candidate="1"] {
-    background: linear-gradient(45deg, #FF6B6B, #FF8787);
-}
-
-.progress-bar[data-candidate="2"] {
-    background: linear-gradient(45deg, #4CAF50, #81C784);
-}
-
-.progress-bar[data-candidate="3"] {
-    background: linear-gradient(45deg, #2196F3, #64B5F6);
-}
-
-.progress-bar::after {
+.vote-button:before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    width: 200%;
+    left: -100%;
+    width: 100%;
     height: 100%;
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.1) 25%,
-        rgba(255, 255, 255, 0.2) 35%,
-        rgba(255, 255, 255, 0.3) 45%,
-        rgba(255, 255, 255, 0.2) 55%,
-        rgba(255, 255, 255, 0.1) 65%
-    );
-    animation: wave 2s infinite linear;
-    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
 }
 
-@keyframes wave {
-    0% {
-        transform: translateX(-50%);
-    }
-    100% {
-        transform: translateX(0%);
-    }
+.vote-button:hover:before {
+    left: 100%;
 }
 
-.vote-percentage {
-    font-size: 1.1rem;
-    font-weight: bold;
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: white;
+.vote-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.vote-button:active {
+    transform: scale(0.95);
+}
+
+.vote-button.voted {
+    background: #9e9e9e;
+    cursor: not-allowed;
+}
+
+.vote-button.voted:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.button-text {
+    position: relative;
     z-index: 1;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+.button-icon {
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s ease;
+}
+
+.vote-button:hover .button-icon {
+    transform: translateX(3px);
+}
+
+.vote-button.voted .button-icon {
+    transform: none;
+}
+
+/* Total Votes Display */
 .total-votes {
     text-align: center;
-    margin-top: 3rem;
-    padding: 2rem;
-    background-color: white;
-    border-radius: 20px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    margin: 20px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.total-votes h2 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5em;
+}
+
+.total-votes p {
+    margin: 10px 0 0 0;
+    color: #666;
+    font-size: 1.2em;
 }
 
 /* Animations */
@@ -403,8 +430,14 @@ main {
 }
 
 @keyframes slideIn {
-    from { transform: translateX(-20px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    from {
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 /* Icons */
@@ -487,24 +520,15 @@ footer .container {
 
 /* Candidate Cards */
 .candidate-card {
-    position: relative;
-    overflow: hidden;
+    animation: slideIn 0.5s ease-out forwards;
 }
 
-.candidate-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 5px;
-    background: linear-gradient(to right, var(--accent-coral), var(--light-blue));
-    opacity: 0;
-    transition: opacity 0.3s ease;
+.candidate-card:nth-child(2) {
+    animation-delay: 0.1s;
 }
 
-.candidate-card:hover::before {
-    opacity: 1;
+.candidate-card:nth-child(3) {
+    animation-delay: 0.2s;
 }
 
 /* Form Improvements */
