@@ -320,6 +320,20 @@ function displayCandidates(candidates) {
     });
 }
 
+// Update vote buttons when user has voted
+function updateVoteButtons() {
+    if (hasVoted()) {
+        document.querySelectorAll('.vote-button').forEach(button => {
+            button.disabled = true;
+            button.classList.add('voted');
+            const buttonText = button.querySelector('.button-text');
+            const buttonIcon = button.querySelector('.button-icon');
+            if (buttonText) buttonText.textContent = 'Already Voted';
+            if (buttonIcon) buttonIcon.textContent = '✓';
+        });
+    }
+}
+
 // Cast vote function
 async function castVote(candidateId) {
     const voterEmail = getVoterEmail();
@@ -357,6 +371,8 @@ async function castVote(candidateId) {
             showMessage(voteMessage, data.message, 'success');
             // Mark as voted
             markAsVoted(voterEmail);
+            // Update vote buttons
+            updateVoteButtons();
             // Reload candidates to update vote counts
             const updatedCandidates = await loadCandidatesData();
             displayCandidates(updatedCandidates);
@@ -466,48 +482,32 @@ async function handleVoteSubmit(event) {
     }
 }
 
-// Initialize the application
+// Initialize app
 async function initializeApp() {
+    console.log('Initializing app...');
     try {
-        console.log('Initializing application...');
-        
         // Load candidates data
-        const candidatesData = await loadCandidatesData();
-        console.log('Loaded candidates data:', candidatesData);
-        
-        // Display candidates if we have data
-        if (candidatesData && Array.isArray(candidatesData) && candidatesData.length > 0) {
-            displayCandidates(candidatesData);
+        const candidates = await loadCandidatesData();
+        if (candidates && candidates.length > 0) {
+            displayCandidates(candidates);
         } else {
             console.error('No candidates data available');
-            candidatesContainer.innerHTML = '<p class="error">No candidates available. Please try again later.</p>';
+            showMessage(voteMessage, 'No candidates available', 'error');
         }
-        
-        // Check if user has already voted
+
+        // Check if user has voted
         if (hasVoted()) {
             console.log('User has already voted');
-            // Disable voting form
-            const voteForm = document.getElementById('vote-form');
-            if (voteForm) {
-                voteForm.style.opacity = '0.5';
-                voteForm.style.pointerEvents = 'none';
-                
-                // Add a message
-                const alreadyVotedMessage = document.createElement('div');
-                alreadyVotedMessage.className = 'message error';
-                alreadyVotedMessage.textContent = 'You have already voted from this device!';
-                voteForm.parentNode.insertBefore(alreadyVotedMessage, voteForm);
-            }
+            // Update vote buttons
+            updateVoteButtons();
+            // Show message
+            showMessage(voteMessage, 'You have already voted from this device!', 'info');
         } else {
             console.log('User has not voted yet');
         }
-        
-        // Show the home page by default
-        showPage('home');
-        
     } catch (error) {
         console.error('Error initializing app:', error);
-        showMessage(voteMessage, 'Error initializing application. Please refresh the page.', 'error');
+        showMessage(voteMessage, 'Error loading candidates. Please try again later.', 'error');
     }
 }
 
@@ -529,12 +529,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Set up vote form
+    // Set up vote form if it exists
     const voteForm = document.getElementById('vote-form');
     if (voteForm) {
         voteForm.addEventListener('submit', handleVoteSubmit);
     } else {
-        console.error('Vote form not found');
+        console.log('Vote form not found - using direct button clicks instead');
     }
     
     // Initialize the application
