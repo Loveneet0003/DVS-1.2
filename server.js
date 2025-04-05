@@ -8,9 +8,10 @@ const port = process.env.PORT || 5000;
 
 // Configure CORS
 app.use(cors({
-    origin: ['http://localhost:5000', 'https://dvs-1-2.onrender.com', 'http://127.0.0.1:5500'],
-    methods: ['GET', 'POST'],
-    credentials: true
+    origin: '*', // Allow all origins for testing
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -27,6 +28,20 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI;
+console.log('MongoDB URI format check:', {
+    hasProtocol: uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://'),
+    hasUsername: uri.includes('@'),
+    hasHostname: uri.includes('.mongodb.net'),
+    length: uri.length
+});
+
+// Validate URI format
+if (!uri.includes('.mongodb.net')) {
+    console.error('Invalid MongoDB URI format. Must include hostname, domain name, and TLD');
+    console.error('Expected format: mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority');
+    process.exit(1);
+}
+
 console.log('Attempting to connect to MongoDB...');
 mongoose.connect(uri, { 
     useNewUrlParser: true, 
@@ -35,7 +50,12 @@ mongoose.connect(uri, {
 }).then(() => {
     console.log('Successfully connected to MongoDB.');
 }).catch(err => {
-    console.error('MongoDB connection error:', err);
+    console.error('MongoDB connection error details:', {
+        name: err.name,
+        message: err.message,
+        code: err.code,
+        uri: uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@') // Hide credentials in logs
+    });
     process.exit(1);
 });
 
@@ -115,11 +135,21 @@ app.get('/api/check-init', async (req, res) => {
 // Routes
 app.get('/api/candidates', async (req, res) => {
     try {
+        console.log('API: Fetching candidates');
         const candidates = await Candidate.find({});
-        console.log('Fetching candidates:', candidates);
+        console.log('API: Found candidates:', candidates);
+        
+        if (!candidates || candidates.length === 0) {
+            console.log('API: No candidates found, initializing...');
+            await initializeCandidates();
+            const newCandidates = await Candidate.find({});
+            console.log('API: After initialization, found candidates:', newCandidates);
+            return res.json(newCandidates);
+        }
+        
         res.json(candidates);
     } catch (error) {
-        console.error('Error fetching candidates:', error);
+        console.error('API Error fetching candidates:', error);
         res.status(500).json({ message: error.message });
     }
 });

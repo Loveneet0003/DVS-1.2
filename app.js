@@ -19,7 +19,28 @@ let candidates = [];
 async function loadCandidatesData() {
     try {
         console.log('Fetching candidates from API...');
-        const response = await fetch(`${API_URL}/candidates`);
+        console.log('API URL:', `${API_URL}/candidates`);
+        
+        // Add timeout to fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch(`${API_URL}/candidates`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            signal: controller.signal
+        }).catch(error => {
+            console.error('Network error:', error);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timed out. Please check your internet connection.');
+            }
+            throw new Error(`Network error: ${error.message}`);
+        });
+        
+        clearTimeout(timeoutId);
         console.log('Response status:', response.status);
         
         if (!response.ok) {
