@@ -2,6 +2,7 @@ services:
   - type: web
     name: dvs-1.2
     env: node
+    rootDir: backend
     buildCommand: npm install
     startCommand: node server.js
     envVars:
