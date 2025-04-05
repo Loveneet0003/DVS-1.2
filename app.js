@@ -85,16 +85,23 @@ async function loadCandidatesData() {
         
         clearTimeout(timeoutId);
         console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
         
         if (!response.ok) {
-            throw new Error(`Failed to fetch candidates: ${response.status}`);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            throw new Error(`Failed to fetch candidates: ${response.status} - ${errorText}`);
         }
         
         const data = await response.json();
         console.log('Received candidates data:', data);
         
-        // Ensure we have the correct candidate data
-        if (!Array.isArray(data) || data.length === 0) {
+        if (!Array.isArray(data)) {
+            console.error('Received non-array data:', data);
+            throw new Error('Invalid data format received from server');
+        }
+        
+        if (data.length === 0) {
             console.log('No candidates found, trying to initialize...');
             // If no candidates found, try to initialize them
             const initResponse = await fetch(`${API_URL}/check-init`);
@@ -242,27 +249,41 @@ async function loadCandidates() {
 
 // Display candidates in the UI
 function displayCandidates(candidates) {
+    console.log('Displaying candidates:', candidates);
+    
+    if (!Array.isArray(candidates) || candidates.length === 0) {
+        console.error('Invalid candidates data:', candidates);
+        candidatesContainer.innerHTML = '<p class="error">No candidates available. Please try again later.</p>';
+        return;
+    }
+    
     candidatesContainer.innerHTML = '';
     
     candidates.forEach(candidate => {
+        console.log('Creating card for candidate:', candidate);
+        
+        if (!candidate || typeof candidate !== 'object') {
+            console.error('Invalid candidate data:', candidate);
+            return;
+        }
+        
         const candidateCard = document.createElement('div');
         candidateCard.className = 'candidate-card';
         candidateCard.innerHTML = `
-            <h3>${candidate.name}</h3>
-            <p>Current Votes: ${candidate.voteCount}</p>
-            <button class="btn primary" data-id="${candidate.id}">Vote</button>
+            <h3>${candidate.name || 'Unknown Candidate'}</h3>
+            <p>Votes: ${candidate.voteCount || 0}</p>
+            <button onclick="castVote(${candidate.id})" ${hasVoted() ? 'disabled' : ''}>
+                ${hasVoted() ? 'Already Voted' : 'Vote'}
+            </button>
         `;
         
         candidatesContainer.appendChild(candidateCard);
     });
     
-    // Add event listeners to vote buttons
-    document.querySelectorAll('.candidate-card button').forEach(button => {
-        button.addEventListener('click', () => {
-            const candidateId = parseInt(button.getAttribute('data-id'));
-            castVote(candidateId);
-        });
-    });
+    // Update total votes
+    const totalVotes = candidates.reduce((sum, candidate) => sum + (candidate.voteCount || 0), 0);
+    console.log('Total votes:', totalVotes);
+    totalVotesElement.textContent = totalVotes;
 }
 
 // Cast vote function
