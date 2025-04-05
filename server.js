@@ -6,15 +6,37 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+// Configure CORS
+app.use(cors({
+    origin: ['http://localhost:5000', 'https://dvs-1-2.onrender.com', 'http://127.0.0.1:5500'],
+    methods: ['GET', 'POST'],
+    credentials: true
+}));
+
 app.use(express.json());
 
-// MongoDB connection (replace with your MongoDB connection string)
-const uri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/election";
+// Add a health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// MongoDB connection
+if (!process.env.MONGODB_URI) {
+    console.error('MONGODB_URI environment variable is not set!');
+    process.exit(1);
+}
+
+const uri = process.env.MONGODB_URI;
+console.log('Attempting to connect to MongoDB...');
 mongoose.connect(uri, { 
     useNewUrlParser: true, 
     useUnifiedTopology: true,
     serverSelectionTimeoutMS: 5000 // Timeout after 5s instead of 30s
+}).then(() => {
+    console.log('Successfully connected to MongoDB.');
+}).catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
 });
 
 const connection = mongoose.connection;
