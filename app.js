@@ -160,24 +160,44 @@ async function loadCandidatesData() {
     }
 }
 
+// Show a specific page
+function showPage(pageId) {
+    console.log('Showing page:', pageId);
+    
+    // Hide all pages
+    pages.forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    // Show the target page
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) {
+        targetPage.classList.add('active');
+    } else {
+        console.error('Page not found:', pageId);
+    }
+    
+    // Update active link
+    navLinks.forEach(link => {
+        if (link.getAttribute('data-page') === pageId) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+}
+
 // Navigation
 navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
         e.preventDefault();
         const targetPage = link.getAttribute('data-page');
         
-        // Update active link
-        navLinks.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-        
-        // Show target page
-        pages.forEach(page => {
-            if (page.id === targetPage) {
-                page.classList.add('active');
-            } else {
-                page.classList.remove('active');
-            }
-        });
+        if (targetPage) {
+            showPage(targetPage);
+        } else {
+            console.error('No data-page attribute found on link:', link);
+        }
     });
 });
 
@@ -251,7 +271,7 @@ async function loadCandidates() {
 function displayCandidates(candidates) {
     console.log('Displaying candidates:', candidates);
     
-    if (!Array.isArray(candidates) || candidates.length === 0) {
+    if (!candidates || !Array.isArray(candidates) || candidates.length === 0) {
         console.error('Invalid candidates data:', candidates);
         candidatesContainer.innerHTML = '<p class="error">No candidates available. Please try again later.</p>';
         return;
@@ -288,11 +308,20 @@ function displayCandidates(candidates) {
 
 // Cast vote function
 async function castVote(candidateId) {
-    const verifiedEmail = localStorage.getItem('verifiedEmail');
-    if (!verifiedEmail) {
+    const voterEmail = getVoterEmail();
+    if (!voterEmail) {
         showMessage(voteMessage, 'Please register first with your college email', 'error');
         return;
     }
+    
+    // Check if user has already voted
+    if (hasVoted()) {
+        showMessage(voteMessage, 'You have already voted from this device!', 'error');
+        return;
+    }
+    
+    const deviceId = getDeviceId();
+    console.log('Casting vote:', { candidateId, voterEmail, deviceId });
 
     try {
         const response = await fetch(`${API_URL}/vote`, {
@@ -302,22 +331,23 @@ async function castVote(candidateId) {
             },
             body: JSON.stringify({
                 candidateId,
-                voterEmail: verifiedEmail
+                voterEmail,
+                deviceId
             }),
         });
 
         const data = await response.json();
+        console.log('Vote response:', data);
         
         if (response.ok) {
             showMessage(voteMessage, data.message, 'success');
+            // Mark as voted
+            markAsVoted(voterEmail);
             // Reload candidates to update vote counts
-            loadCandidates();
-            // Update results if on results page
-            if (document.getElementById('results').classList.contains('active')) {
-                loadResults();
-            }
+            const updatedCandidates = await loadCandidatesData();
+            displayCandidates(updatedCandidates);
         } else {
-            showMessage(voteMessage, data.message, 'error');
+            showMessage(voteMessage, data.message || 'Error casting vote', 'error');
         }
     } catch (error) {
         console.error('Error casting vote:', error);
@@ -425,17 +455,23 @@ async function handleVoteSubmit(event) {
 // Initialize the application
 async function initializeApp() {
     try {
+        console.log('Initializing application...');
+        
         // Load candidates data
-        await loadCandidatesData();
+        const candidatesData = await loadCandidatesData();
+        console.log('Loaded candidates data:', candidatesData);
         
-        // Display candidates
-        displayCandidates();
-        
-        // Update results
-        updateResults();
+        // Display candidates if we have data
+        if (candidatesData && Array.isArray(candidatesData) && candidatesData.length > 0) {
+            displayCandidates(candidatesData);
+        } else {
+            console.error('No candidates data available');
+            candidatesContainer.innerHTML = '<p class="error">No candidates available. Please try again later.</p>';
+        }
         
         // Check if user has already voted
         if (hasVoted()) {
+            console.log('User has already voted');
             // Disable voting form
             const voteForm = document.getElementById('vote-form');
             if (voteForm) {
@@ -448,20 +484,34 @@ async function initializeApp() {
                 alreadyVotedMessage.textContent = 'You have already voted from this device!';
                 voteForm.parentNode.insertBefore(alreadyVotedMessage, voteForm);
             }
+        } else {
+            console.log('User has not voted yet');
         }
+        
+        // Show the home page by default
+        showPage('home');
+        
     } catch (error) {
         console.error('Error initializing app:', error);
+        showMessage(voteMessage, 'Error initializing application. Please refresh the page.', 'error');
     }
 }
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing application...');
+    
     // Set up navigation
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const page = e.target.getAttribute('href').substring(1);
-            showPage(page);
+            const targetPage = link.getAttribute('data-page');
+            
+            if (targetPage) {
+                showPage(targetPage);
+            } else {
+                console.error('No data-page attribute found on link:', link);
+            }
         });
     });
     
@@ -469,6 +519,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const voteForm = document.getElementById('vote-form');
     if (voteForm) {
         voteForm.addEventListener('submit', handleVoteSubmit);
+    } else {
+        console.error('Vote form not found');
     }
     
     // Initialize the application
