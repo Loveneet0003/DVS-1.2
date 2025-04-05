@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: college-election-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false 

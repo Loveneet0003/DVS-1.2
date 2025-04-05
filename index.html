@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Hostel Election</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">College Hostel Election</div>
+            <ul class="nav-links">
+                <li><a href="#" class="active" data-page="home"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#" data-page="register"><i class="fas fa-user-plus"></i> Register</a></li>
+                <li><a href="#" data-page="vote"><i class="fas fa-vote-yea"></i> Vote</a></li>
+                <li><a href="#" data-page="results"><i class="fas fa-chart-bar"></i> Live Results</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Home Page -->
+        <section id="home" class="page active">
+            <div class="container">
+                <div class="hero">
+                    <h1>College Hostel Election</h1>
+                    <p>Make your voice heard! Vote for your preferred candidate and shape the future of our hostel community.</p>
+                    <div class="hero-buttons">
+                        <button class="btn primary" data-page="register">Get Started</button>
+                    </div>
+                </div>
+                
+                <div class="features">
+                    <div class="feature-card">
+                        <i class="fas fa-user-check feature-icon"></i>
+                        <h2>Easy Registration</h2>
+                        <p>Register quickly with your college email to participate in the election</p>
+                        <button class="btn primary" data-page="register">Register Now</button>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <i class="fas fa-vote-yea feature-icon"></i>
+                        <h2>Secure Voting</h2>
+                        <p>Cast your vote securely for your preferred candidate</p>
+                        <button class="btn primary" data-page="vote">Vote Now</button>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <i class="fas fa-chart-line feature-icon"></i>
+                        <h2>Live Results</h2>
+                        <p>View real-time election results as they happen</p>
+                        <button class="btn primary" data-page="results">View Results</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Register Page -->
+        <section id="register" class="page">
+            <div class="container">
+                <div class="form-container">
+                    <i class="fas fa-user-plus form-icon"></i>
+                    <h2>Register to Vote</h2>
+                    <form id="register-form">
+                        <div class="form-group">
+                            <label for="email"><i class="fas fa-envelope"></i> College Email Address</label>
+                            <input type="email" id="email" name="email" required placeholder="your.name@nith.ac.in">
+                        </div>
+                        <button type="submit" class="btn primary"><i class="fas fa-check"></i> Register</button>
+                    </form>
+                    <div id="register-message" class="message"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Vote Page -->
+        <section id="vote" class="page">
+            <div class="container">
+                <h2 class="section-title"><i class="fas fa-vote-yea"></i> Cast Your Vote</h2>
+                <div id="vote-message" class="message"></div>
+                <div id="candidates-container" class="candidates-grid">
+                    <!-- Candidates will be loaded here dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Page -->
+        <section id="results" class="page">
+            <div class="container">
+                <h2 class="section-title"><i class="fas fa-chart-bar"></i> Live Voting Results</h2>
+                <div id="results-container">
+                    <!-- Results will be loaded here dynamically -->
+                </div>
+                <div class="total-votes">
+                    <i class="fas fa-users"></i>
+                    <h3>Total Votes Cast: <span id="total-votes">0</span></h3>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 College Hostel Election. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 
